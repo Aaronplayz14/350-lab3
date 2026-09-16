@@ -1,6 +1,24 @@
 1. What is a benefit (besides aliasing) of our `SharedPtr<T>` directly storing a “stored pointer” (we could always just
    access it through the control block, if we're not aliasing)?
+
+   Every dereference avoids an indirection (a virtual call to managedAddress()): operator*, operator->, 
+   and get() can return the stored pointer instantly rather than requesting the address from the control block.
+
 2. What is a disadvantage of having the stored pointer (instead of going through the control block)?
+
+   Because it replicates the ownership state, each copy, move, assignment, and reset must maintain the control block and the stored pointer in sync. 
+   However, the two may not agree, adding bookkeeping per SharedPtr and costing an additional pointer.
+
 3. From a system design/architecture perspective, what disadvantages are there to using shared pointers?
+
+   Because there is no single owner in shared ownership, 
+   an object's lifetime is determined by an opaque refcount rather than a clear ownership hierarchy, 
+   which makes it more difficult to reason about lifetimes and dependencies. 
+   It also makes it simple to unintentionally create ownership cycles that leak because their refcounts never reach zero.
+
 4. From a performance perspective, what disadvantages there are to using shared pointers (say, versus a unique pointer
    or raw pointer)?
+
+   In addition to the expense of a heap-allocated control block and an additional indirection to access it, 
+   each copy and destruction results in a refcount increment/decrement , 
+   which a unique pointer does not have.
